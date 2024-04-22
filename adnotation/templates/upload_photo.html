@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Photo</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #333; /* ciemnoszare tło */
+            color: #fff; /* kolor tekstu */
+        }
+        header {
+            background-color: #222; /* ciemniejszy odcień szarego dla nagłówka */
+            padding: 20px 0;
+            text-align: center;
+        }
+        .container {
+            max-width: 800px;
+            margin: 20px auto;
+            padding: 0 20px;
+        }
+        h2 {
+            margin-top: 0;
+        }
+        form {
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        form button {
+            margin-top: 10px;
+            padding: 10px 20px;
+            background-color: #222;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        form button:hover {
+            background-color: #444;
+        }
+        nav {
+            background-color: #222; /* tło menu */
+            border-radius: 10px; /* zaokrąglenie rogów */
+            overflow: hidden; /* ukrycie elementów, które wyjdą poza kontener */
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center; /* równomierne rozłożenie opcji */
+        }
+        nav ul li {
+            display: inline;
+            margin-right: 20px;
+        }
+        nav ul li:last-child {
+            margin-right: 0;
+        }
+        nav ul li a {
+            color: #fff;
+            text-decoration: none;
+            padding: 10px 20px;
+            display: block;
+        }
+        nav ul li a:hover {
+            background-color: #444; /* zmiana koloru tła po najechaniu myszką */
+        }
+        canvas {
+            border: 2px dashed #ddd; /* linia przerywana wokół płótna */
+            cursor: crosshair; /* zmiana kursora na krzyżyk */
+        }
+        .save-button {
+            margin-top: 20px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>System internetowy do adnotacji danych ilustrujących zmiany skórne</h1>
+        <nav>
+            <ul>
+                <li><a href="">Strona główna</a></li>
+                <li><a href="upload">Załaduj zdjęcie</a></li>
+                <li><a href="photo-list">Galeria</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div class="container">
+        <h2>Upload Photo</h2>
+        <form id="uploadForm" method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <input type="file" id="fileInput" name="photo" accept="image/*">
+            <button type="submit">Upload</button>
+        </form>
+        <center><canvas id="uploadedCanvas" width="800" height="600"></canvas></center>
+    </div>
+
+    <footer>
+        &copy; 2024 System internetowy do adnotacji danych ilustrujących zmiany skórne
+    </footer>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.5.0/fabric.min.js"></script>
+    <script>
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            var file = e.target.files[0];
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                var img = new Image();
+                img.onload = function() {
+                    var canvas = new fabric.Canvas('uploadedCanvas');
+                    var scaleFactor = Math.min(canvas.width / img.width, canvas.height / img.height);
+                    var scaledWidth = img.width * scaleFactor;
+                    var scaledHeight = img.height * scaleFactor;
+                    canvas.setDimensions({ width: scaledWidth, height: scaledHeight });
+                    canvas.setBackgroundImage(img.src, canvas.renderAll.bind(canvas), {
+                        scaleX: scaleFactor,
+                        scaleY: scaleFactor,
+                        originX: 'left',
+                        originY: 'top',
+                        crossOrigin: 'anonymous'
+                    });
+
+                    canvas.preserveObjectStacking = true; // Zachowanie właściwości obiektów
+
+                    var isDrawing = false;
+                    var origX, origY;
+                    var rect, text;
+
+                    canvas.on('mouse:down', function(o) {
+                        isDrawing = true;
+                        var pointer = canvas.getPointer(o.e);
+                        origX = pointer.x;
+                        origY = pointer.y;
+                        rect = new fabric.Rect({
+                            left: origX,
+                            top: origY,
+                            originX: 'left',
+                            originY: 'top',
+                            width: 1,
+                            height: 1,
+                            angle: 0,
+                            stroke: '#000',
+                            strokeWidth: 2,
+                            fill: 'rgba(255, 255, 255, 0)', // przezroczysty wypełnienie
+                            transparentCorners: false
+                        });
+                        canvas.add(rect);
+                    });
+
+                    canvas.on('mouse:move', function(o) {
+                        if (!isDrawing) return;
+                        var pointer = canvas.getPointer(o.e);
+                        rect.set({ width: pointer.x - origX, height: pointer.y - origY });
+                        canvas.renderAll();
+                    });
+
+                    canvas.on('mouse:up', function(o) {
+                        isDrawing = false;
+                        if (rect.width < 3 || rect.height < 3) {
+                            canvas.remove(rect);
+                        } else {
+                            text = new fabric.Textbox('Podpis', {
+                                left: rect.left + 5,
+                                top: rect.top - 15,
+                                width: rect.width - 10,
+                                fontSize: 14,
+                                fill: '#000',
+                                borderColor: '#000',
+                                cornerColor: '#000',
+                                cornerSize: 6,
+                                transparentCorners: false,
+                                lockRotation: true,
+                                lockScalingX: true,
+                                lockScalingY: true,
+                                hasControls: false
+                            });
+                            canvas.add(text);
+                            canvas.setActiveObject(text);
+                            canvas.renderAll();
+                        }
+                    });
+                };
+                img.src = e.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+    </script>
+</body>
+</html>
