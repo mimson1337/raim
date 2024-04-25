@@ -1,4 +1,4 @@
-# Nazwa Projektu - System internetowy do adnotacji danych ilustrujących zmiany skórne
+# System internetowy do adnotacji danych ilustrujących zmiany skórne
 
 ## Opis
 
