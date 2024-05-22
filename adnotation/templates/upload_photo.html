@@ -131,6 +131,7 @@
                     var isDrawing = false;
                     var origX, origY;
                     var rect, text;
+                    var objectStack = [];
 
                     canvas.on('mouse:down', function(o) {
                         isDrawing = true;
@@ -145,7 +146,7 @@
                             width: 1,
                             height: 1,
                             angle: 0,
-                            stroke: '#000',
+                            stroke: '#F00',
                             strokeWidth: 2,
                             fill: 'rgba(255, 255, 255, 0)', // przezroczysty wypełnienie
                             transparentCorners: false
@@ -183,6 +184,20 @@
                             canvas.add(text);
                             canvas.setActiveObject(text);
                             canvas.renderAll();
+                        }
+                        objectStack.push({ action: 'add', object: rect });
+                        objectStack.push({ action: 'add', object: text });
+                    });
+
+                    document.addEventListener('keydown', function(e) {
+                        if ((window.navigator.platform.match("Mac") ? e.metaKey : e.ctrlKey)  && e.key === 'z') {
+                            var lastAction = objectStack.pop();
+                            if (lastAction) {
+                                if (lastAction.action === 'add') {
+                                    canvas.remove(lastAction.object);
+                                }
+                                canvas.renderAll();
+                            }
                         }
                     });
                 };
