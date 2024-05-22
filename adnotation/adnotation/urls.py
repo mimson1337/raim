@@ -24,11 +24,11 @@ from django.conf.urls.static import static
 
 
 urlpatterns = [
-    path('admin/', admin.site.urls),
-    path('', views.page),
-    path('upload/', views.upload_photo),  # Dodaj ścieżkę do widoku przesyłania zdjęć
-    # path('upload/upload/', RedirectView.as_view(url='/upload/')),  # przekieruj /upload/upload na /upload
+    path('admin/', admin.site.urls, name='admin'),
+    path('', views.index,  name='index'),
     path('photo-list/', views.photo_list, name='photo_list'),
+    # path('upload/', views.index),  # Dodaj ścieżkę do widoku przesyłania zdjęć
+    # path('upload/upload/', RedirectView.as_view(url='/upload/')),  # przekieruj /upload/upload na /upload
     # path('save_image/', views.save_image, name='save_image'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 

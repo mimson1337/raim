@@ -68,16 +68,15 @@
         <h1>System internetowy do adnotacji danych ilustrujących zmiany skórne</h1>
         <nav>
             <ul>
-                <li><a href="">Strona główna</a></li>
-                <li><a href="upload/">Załaduj zdjęcie</a></li>
+<!--                <li><a href="">Strona główna</a></li>-->
+                <li><a href="/">Załaduj zdjęcie</a></li>
                 <li><a href="photo-list/">Galeria</a></li>
             </ul>
         </nav>
     </header>
-    <div class="container">
-        <h2>Witaj w naszym systemie!</h2>
-        <p>Tutaj możesz rozpocząć pracę nad adnotacją danych skórnych.</p>
-    </div>
+<main>
+    {% block content %}{% endblock %}
+</main>
     <footer>
         &copy; 2024 System internetowy do adnotacji danych ilustrujących zmiany skórne
     </footer>

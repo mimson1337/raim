@@ -40,3 +40,5 @@ def photo_list(request):
 #         except Exception as e:
 #             return JsonResponse({'success': False, 'error': str(e)})
 #     return JsonResponse({'success': False, 'error': 'Invalid request'})
+def index(request):
+    return render(request, 'index.html')
