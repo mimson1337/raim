@@ -21,12 +21,13 @@ from . import views
 from django.conf import settings
 from django.conf.urls.static import static
 
-
+from .views import save_annotation
 
 urlpatterns = [
     path('admin/', admin.site.urls, name='admin'),
     path('', views.index,  name='index'),
     path('photo-list/', views.photo_list, name='photo_list'),
+    path('save_annotation/', save_annotation, name='save_annotation'),
     # path('upload/', views.index),  # Dodaj ścieżkę do widoku przesyłania zdjęć
     # path('upload/upload/', RedirectView.as_view(url='/upload/')),  # przekieruj /upload/upload na /upload
     # path('save_image/', views.save_image, name='save_image'),

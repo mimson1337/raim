@@ -21,7 +21,7 @@
         gap: 10px;
         margin: 20px 0;
     }
-    #controls button, #controls input[type="file"], #controls input[type="text"] {
+    #controls button, #controls input[type="file"], #controls input[type="text"], #controls input[type="number"], #controls select {
         padding: 10px;
         font-size: 16px;
         border: 1px solid #ccc;
@@ -30,13 +30,6 @@
     #controls input[type="file"] {
         padding: 5px;
     }
-<!--     #canvas {-->
-<!--        border: 1px solid #ccc;-->
-<!--        width: 80%;-->
-<!--        height: 80vh; /* Sets the height to 80% of the viewport height */-->
-<!--        align-items: center;-->
-<!--        margin-left: 250px;-->
-<!--    }-->
     #canvas {
         border: 1px solid #ccc;
         margin-top: 20px;
@@ -50,6 +43,14 @@
         <button id="rectAnnotation">Rectangle Annotation</button>
         <button id="polyAnnotation">Polygon Annotation</button>
         <input type="text" id="annotationText" placeholder="Enter annotation text"/>
+        <input type="number" id="patientAge" placeholder="Enter patient age"/>
+        <select id="patientGender">
+            <option value="" disabled selected>Select gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+        </select>
+        <input type="text" id="patientSymptoms" placeholder="Enter symptoms"/>
         <button id="saveAnnotation">Save Annotation</button>
         <button id="saveImage">Save Image with Annotations</button>
         <button id="saveJson">Save Annotations as JSON</button>
@@ -73,6 +74,12 @@
         let drawing = false;
         let mode = 'rectangle';
         let img = new Image();
+        let patientInfo = {
+            age: '',
+            gender: '',
+            symptoms: '',
+            fileName: ''
+        };
 
         imageLoader.addEventListener('change', handleImage, false);
         rectButton.addEventListener('click', () => mode = 'rectangle');
@@ -94,6 +101,7 @@
                     ctx.drawImage(img, 0, 0);
                 }
                 img.src = event.target.result;
+                patientInfo.fileName = e.target.files[0].name;
             }
             reader.readAsDataURL(e.target.files[0]);
         }
@@ -152,9 +160,8 @@
                     ctx.stroke();
                 }
                 if (ann.text) {
-                   ctx.font = "bold 20px Arial"; // Ustawienie większego i pogrubionego fontu
+                    ctx.font = "bold 20px Arial";
                     ctx.fillText(ann.text, ann.x || ann.points[0].x, ann.y || ann.points[0].y);
-
                 }
             });
 
@@ -182,15 +189,6 @@
                 currentAnnotation = null;
                 annotationText.value = '';
                 redraw();
-            } else {
-                if (mode === 'rectangle' && annotations.length > 0) {
-                    let lastAnnotation = annotations[annotations.length - 1];
-                    if (lastAnnotation.type === 'rectangle' && lastAnnotation.text === '') {
-                        lastAnnotation.text = annotationText.value;
-                        annotationText.value = '';
-                        redraw();
-                    }
-                }
             }
         }
 
@@ -202,10 +200,14 @@
         }
 
         function saveJson() {
-            let json = JSON.stringify(annotations);
+            patientInfo.age = document.getElementById('patientAge').value;
+            patientInfo.gender = document.getElementById('patientGender').value;
+            patientInfo.symptoms = document.getElementById('patientSymptoms').value;
+            let json = JSON.stringify({ patientInfo, annotations }, null, 2);
             let blob = new Blob([json], { type: 'application/json' });
             let link = document.createElement('a');
-            link.download = 'annotations.json';
+            let jsonFileName = patientInfo.fileName.replace(/\.[^/.]+$/, "") + '.json';
+            link.download = jsonFileName;
             link.href = URL.createObjectURL(blob);
             link.click();
         }
@@ -214,10 +216,12 @@
             annotations = [];
             currentAnnotation = null;
             annotationText.value = '';
+            document.getElementById('patientAge').value = '';
+            document.getElementById('patientGender').value = '';
+            document.getElementById('patientSymptoms').value = '';
             redraw();
         }
     </script>
 </body>
 </html>
-
 {% endblock %}

@@ -21,6 +21,7 @@
             max-width: 800px;
             margin: 20px auto;
             padding: 0 20px;
+            text-align: center;
         }
         h2 {
             margin-top: 0;
@@ -73,10 +74,21 @@
         canvas {
             border: 2px dashed #ddd; /* linia przerywana wokół płótna */
             cursor: crosshair; /* zmiana kursora na krzyżyk */
+            margin-top: 20px;
         }
         .save-button {
             margin-top: 20px;
             text-align: center;
+        }
+        .save-button button {
+            padding: 10px 20px;
+            background-color: #222;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+        }
+        .save-button button:hover {
+            background-color: #444;
         }
     </style>
 </head>
@@ -85,9 +97,9 @@
         <h1>System internetowy do adnotacji danych ilustrujących zmiany skórne</h1>
         <nav>
             <ul>
-                <li><a href="">Strona główna</a></li>
-                <li><a href="upload">Załaduj zdjęcie</a></li>
-                <li><a href="photo-list">Galeria</a></li>
+                <li><a href="#">Strona główna</a></li>
+                <li><a href="#">Załaduj zdjęcie</a></li>
+                <li><a href="#">Galeria</a></li>
             </ul>
         </nav>
     </header>
@@ -98,9 +110,11 @@
             <input type="file" id="fileInput" name="photo" accept="image/*">
             <button type="submit">Upload</button>
         </form>
-        <center><canvas id="uploadedCanvas" width="800" height="600"></canvas></center>
+        <canvas id="uploadedCanvas" width="800" height="600"></canvas>
+        <div class="save-button">
+            <button id="saveToDatabaseButton">Zapisz do bazy danych</button>
+        </div>
     </div>
-
     <footer>
         &copy; 2024 System internetowy do adnotacji danych ilustrujących zmiany skórne
     </footer>
@@ -205,6 +219,74 @@
             };
             reader.readAsDataURL(file);
         });
+
+        document.getElementById('saveToDatabaseButton').addEventListener('click', function() {
+            var canvasElement = document.getElementById('uploadedCanvas');
+            var canvas = new fabric.Canvas(canvasElement);
+            var dataURL = canvasElement.toDataURL('image/png');
+            var blobBin = atob(dataURL.split(',')[1]);
+            var array = [];
+            for (var i = 0; i < blobBin.length; i++) {
+                array.push(blobBin.charCodeAt(i));
+            }
+            var file = new Blob([new Uint8Array(array)], {type: 'image/png'});
+            var formData = new FormData();
+            formData.append('image', file, 'annotated_image.png');
+
+            var json_data = {
+                annotations: []
+            };
+
+            // Pobranie wszystkich adnotacji z canvas
+            canvas.getObjects().forEach(function(obj) {
+                if (obj.type === 'rect' || obj.type === 'textbox') {
+                    json_data.annotations.push({
+                        type: obj.type,
+                        left: obj.left,
+                        top: obj.top,
+                        width: obj.width,
+                        height: obj.height,
+                        text: obj.text || ''
+                    });
+                }
+            });
+
+            formData.append('json_data', JSON.stringify(json_data));
+
+            fetch('/save_annotation/', {
+                method: 'POST',
+                body: formData,
+                headers: {
+                    'X-CSRFToken': getCookie('csrftoken') // Funkcja do pobierania tokena CSRF
+                }
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    alert('Adnotacja zapisana pomyślnie');
+                } else {
+                    alert('Wystąpił błąd podczas zapisywania adnotacji');
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+
+        function getCookie(name) {
+            let cookieValue = null;
+            if (document.cookie && document.cookie !== '') {
+                const cookies = document.cookie.split(';');
+                for (let i = 0; i < cookies.length; i++) {
+                    const cookie = cookies[i].trim();
+                    if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                        cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                        break;
+                    }
+                }
+            }
+            return cookieValue;
+        }
     </script>
 </body>
 </html>

@@ -1,8 +1,10 @@
 # views.py
+import json
+
 from django.http import JsonResponse
 from django.shortcuts import render, redirect
 from .forms import PhotoForm
-from .models import Photo
+from .models import Photo, AnnotatedImage
 
 
 def page(request):
@@ -42,3 +44,14 @@ def photo_list(request):
 #     return JsonResponse({'success': False, 'error': 'Invalid request'})
 def index(request):
     return render(request, 'index.html')
+
+
+def save_annotation(request):
+    if request.method == 'POST':
+        image = request.FILES.get('image')
+        json_data = json.loads(request.POST.get('json_data'))
+
+        annotated_image = AnnotatedImage.objects.create(image=image, json_data=json_data)
+        return JsonResponse({'status': 'success', 'image_id': annotated_image.id})
+    return JsonResponse({'status': 'error'}, status=400)
+
