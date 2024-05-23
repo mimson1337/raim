@@ -16,7 +16,6 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from django.views.generic import RedirectView
 from . import views
 from django.conf import settings
 from django.conf.urls.static import static
@@ -28,13 +27,7 @@ urlpatterns = [
     path('', views.index,  name='index'),
     path('photo-list/', views.photo_list, name='photo_list'),
     path('save_annotation/', save_annotation, name='save_annotation'),
-    # path('upload/', views.index),  # Dodaj ścieżkę do widoku przesyłania zdjęć
-    # path('upload/upload/', RedirectView.as_view(url='/upload/')),  # przekieruj /upload/upload na /upload
-    # path('save_image/', views.save_image, name='save_image'),
+    path('upload_annotations/', views.upload_annotations, name='upload_annotations'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
-# if settings.DEBUG:
-#         urlpatterns += static(settings.MEDIA_URL,
-#                               document_root=settings.MEDIA_ROOT)
 
 

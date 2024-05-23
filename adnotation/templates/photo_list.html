@@ -1,80 +1,52 @@
 {% extends 'page.html' %}
 
-{% block title %}index{% endblock %}
+{% block title %}Photo List{% endblock %}
 
 {% block content %}
-    <div class="container">
-        <ul>
-            {% for photo in photos %}
-                <li>
-                    <img src="{{ photo.image.url }}" alt="{{ photo.title }}">
-                    <p>{{ photo.title }}</p>  <!-- Zakładając, że pole 'title' przechowuje tytuł zdjęcia -->
-                </li>
-            {% endfor %}
-        </ul>
+<style>
+    .container {
+        width: 80%;
+        margin: 0 auto;
+        padding: 20px;
+    }
+    .photo-item {
+        border: 1px solid #ccc;
+        padding: 20px;
+        margin-bottom: 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+    .photo-info {
+        margin-top: 20px;
+        text-align: center;
+    }
+    .photo-info p {
+        margin: 5px 0;
+    }
+    .annotated-image {
+        max-width: 100%;
+        height: auto;
+    }
+</style>
+
+<div class="container">
+    {% for image in annotated_images %}
+    <div class="photo-item">
+        <img src="{{ image.image.url }}" alt="Annotated Image" class="annotated-image">
+        <div class="photo-info">
+            {% with image.json_data.patientInfo as info %}
+            <p><strong>Age:</strong> {{ info.age }}</p>
+            <p><strong>Gender:</strong> {{ info.gender }}</p>
+            <p><strong>Symptoms:</strong> {{ info.symptoms }}</p>
+            <p><strong>File Name:</strong> {{ info.fileName }}</p>
+            {% endwith %}
+        </div>
     </div>
-    <footer>
-        &copy; 2024 System internetowy do adnotacji danych ilustrujących zmiany skórne
-    </footer>
-</body>
-</html>
+    {% endfor %}
+</div>
 
-<!--    function saveCanvasToDatabase() {-->
-<!--    var canvas = document.getElementById('uploadedCanvas');-->
-<!--    var imgData = canvas.toDataURL("image/png");-->
-
-<!--    var csrftoken = getCookie('csrftoken'); // Pobierz CSRF token z ciasteczka-->
-
-<!--canvas.forEachObject(function(obj) {-->
-<!--    console.log(obj.type); // Wyświetl typ każdego obiektu na płótnie-->
-<!--});-->
-
-
-<!--    // Pobierz wszystkie obiekty tekstowe z płótna-->
-<!--    var textObjects = canvas.getObjects('textbox');-->
-
-<!--    // Znajdź pierwszy obiekt tekstowy-->
-<!--    var textObject = textObjects[0];-->
-<!--    // Jeśli istnieje obiekt tekstowy-->
-<!--    if (textObject) {-->
-<!--        var description = textObject.text; // Pobierz tekst z obiektu tekstowego-->
-<!--    } else {-->
-<!--        var description = ''; // Ustaw pusty opis, jeśli nie ma obiektu tekstowego-->
-<!--    }-->
-
-<!--    var xhr = new XMLHttpRequest();-->
-<!--    xhr.open('POST', '/save_image/', true);-->
-<!--    xhr.setRequestHeader('X-CSRFToken', csrftoken); // Ustaw CSRF token w nagłówku-->
-<!--    xhr.setRequestHeader('Content-Type', 'application/json');-->
-<!--    xhr.onreadystatechange = function () {-->
-<!--        if (xhr.readyState === 4 && xhr.status === 200) {-->
-<!--            var response = JSON.parse(xhr.responseText);-->
-<!--            if (response.success) {-->
-<!--                alert('Obraz został zapisany w bazie danych!');-->
-<!--            } else {-->
-<!--                alert('Wystąpił błąd podczas zapisywania obrazu.');-->
-<!--            }-->
-<!--        }-->
-<!--    };-->
-<!--    xhr.send(JSON.stringify({ img_data: imgData, description: description }));-->
-<!--}-->
-
-
-<!--// Funkcja do pobierania wartości CSRF token z ciasteczka-->
-<!--function getCookie(name) {-->
-<!--    var cookieValue = null;-->
-<!--    if (document.cookie && document.cookie !== '') {-->
-<!--        var cookies = document.cookie.split(';');-->
-<!--        for (var i = 0; i < cookies.length; i++) {-->
-<!--            var cookie = cookies[i].trim();-->
-<!--            if (cookie.substring(0, name.length + 1) === (name + '=')) {-->
-<!--                cookieValue = decodeURIComponent(cookie.substring(name.length + 1));-->
-<!--                break;-->
-<!--            }-->
-<!--        }-->
-<!--    }-->
-<!--    return cookieValue;-->
-<!--}-->
-
-
+<footer>
+    &copy; 2024 System internetowy do adnotacji danych ilustrujących zmiany skórne
+</footer>
 {% endblock %}

@@ -1,50 +1,34 @@
 # views.py
 import json
-
-from django.http import JsonResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import render, redirect
-from .forms import PhotoForm
-from .models import Photo, AnnotatedImage
-
-
-def page(request):
-    return render(request, 'page.html')
-
-
-def upload_photo(request):
-    if request.method == 'POST':
-        form = PhotoForm(request.POST, request.FILES)
-        if form.is_valid():
-            form.save()
-            return redirect('photo_list')  # Przekieruj użytkownika na stronę z listą zdjęć
-    else:
-        form = PhotoForm()
-    return render(request, 'upload_photo.html', {'form': form})
-
+from django.views.decorators.csrf import csrf_exempt
+from .models import AnnotatedImage
 
 def photo_list(request):
-    photos = Photo.objects.all()  # Pobierz wszystkie obiekty Photo
-    return render(request, 'photo_list.html', {'photos': photos})  # Przekazanie listy zdjęć do szablonu
+    annotated_images = AnnotatedImage.objects.all()
+    context = {
+        'annotated_images': annotated_images
+    }
+    return render(request, 'photo_list.html', context)
 
-# from django.http import JsonResponse
-# from django.shortcuts import render
-# from .forms import PhotoForm
+@csrf_exempt
+def upload_annotations(request):
+    if request.method == 'POST':
+        image_file = request.FILES['imageFile']
+        json_data = json.loads(request.POST['jsonFile'])
 
+        annotated_image = AnnotatedImage(
+            image=image_file,
+            json_data=json_data
+        )
+        annotated_image.save()
 
-# def save_image(request):
-#     if request.method == 'POST':
-#         description = request.POST.get('description')
-#         image_file = request.FILES.get('photo')
-#
-#         try:
-#             Photo.objects.create(description=description, image=image_file)
-#             return JsonResponse({'success': True})
-#         except Exception as e:
-#             return JsonResponse({'success': False, 'error': str(e)})
-#     return JsonResponse({'success': False, 'error': 'Invalid request'})
+        return redirect('index')  # Redirect to the index page
+    return HttpResponse('Invalid request method.')
+
 def index(request):
     return render(request, 'index.html')
-
 
 def save_annotation(request):
     if request.method == 'POST':
@@ -54,4 +38,3 @@ def save_annotation(request):
         annotated_image = AnnotatedImage.objects.create(image=image, json_data=json_data)
         return JsonResponse({'status': 'success', 'image_id': annotated_image.id})
     return JsonResponse({'status': 'error'}, status=400)
-
