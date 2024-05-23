@@ -47,7 +47,6 @@
             <option value="Other">Other</option>
         </select>
         <input type="text" id="patientSymptoms" placeholder="Enter symptoms"/>
-        <br/>
         <input type="file" id="imageLoader" name="imageLoader"/>
         <button id="rectAnnotation">Rectangle Annotation</button>
         <button id="polyAnnotation">Polygon Annotation</button>
@@ -220,9 +219,7 @@
         }
 
         function saveJson() {
-            patientInfo.age = document.getElementById('patientAge').value;
-            patientInfo.gender = document.getElementById('patientGender').value;
-            patientInfo.symptoms = document.getElementById('patientSymptoms').value;
+            updatePatientInfo();  // Ensure patient info is updated before saving JSON
             let json = JSON.stringify({ patientInfo, annotations }, null, 2);
             let blob = new Blob([json], { type: 'application/json' });
             let link = document.createElement('a');
@@ -230,6 +227,12 @@
             link.download = jsonFileName;
             link.href = URL.createObjectURL(blob);
             link.click();
+        }
+
+        function updatePatientInfo() {
+            patientInfo.age = document.getElementById('patientAge').value;
+            patientInfo.gender = document.getElementById('patientGender').value;
+            patientInfo.symptoms = document.getElementById('patientSymptoms').value;
         }
 
         function resetAnnotations() {
@@ -245,6 +248,7 @@
         }
 
         function submitAnnotations() {
+            updatePatientInfo();  // Ensure patient info is updated before submitting
             let form = document.getElementById('uploadForm');
             let imageData = canvas.toDataURL('image/png');
             let jsonData = JSON.stringify({ patientInfo, annotations });
