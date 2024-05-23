@@ -39,10 +39,6 @@
 <body>
     <center><h1>Narzędzie do adnotacji zmian skórnych</h1></center>
     <div id="controls">
-        <input type="file" id="imageLoader" name="imageLoader"/>
-        <button id="rectAnnotation">Rectangle Annotation</button>
-        <button id="polyAnnotation">Polygon Annotation</button>
-        <input type="text" id="annotationText" placeholder="Enter annotation text"/>
         <input type="number" id="patientAge" placeholder="Enter patient age"/>
         <select id="patientGender">
             <option value="" disabled selected>Select gender</option>
@@ -51,6 +47,13 @@
             <option value="Other">Other</option>
         </select>
         <input type="text" id="patientSymptoms" placeholder="Enter symptoms"/>
+        <br/>
+        <input type="file" id="imageLoader" name="imageLoader"/>
+        <button id="rectAnnotation">Rectangle Annotation</button>
+        <button id="polyAnnotation">Polygon Annotation</button>
+        <input type="text" id="annotationText" placeholder="Enter annotation text"/>
+        <input type="number" id="annotationHeight" placeholder="Enter lesion height (cm)" />
+        <input type="number" id="annotationWidth" placeholder="Enter lesion width (cm)" />
         <button id="saveAnnotation">Save Annotation</button>
         <button id="saveImage">Save Image with Annotations</button>
         <button id="saveJson">Save Annotations as JSON</button>
@@ -73,6 +76,8 @@
         let rectButton = document.getElementById('rectAnnotation');
         let polyButton = document.getElementById('polyAnnotation');
         let annotationText = document.getElementById('annotationText');
+        let annotationHeight = document.getElementById('annotationHeight');
+        let annotationWidth = document.getElementById('annotationWidth');
         let saveAnnotationButton = document.getElementById('saveAnnotation');
         let saveImageButton = document.getElementById('saveImage');
         let saveJsonButton = document.getElementById('saveJson');
@@ -83,6 +88,7 @@
         let drawing = false;
         let mode = 'rectangle';
         let img = new Image();
+
         let patientInfo = {
             age: '',
             gender: '',
@@ -118,10 +124,10 @@
 
         function startDrawing(e) {
             if (mode === 'rectangle') {
-                currentAnnotation = { type: 'rectangle', x: e.offsetX, y: e.offsetY, width: 0, height: 0, text: '' };
+                currentAnnotation = { type: 'rectangle', x: e.offsetX, y: e.offsetY, width: 0, height: 0, text: '', heightCm: '', widthCm: '' };
             } else if (mode === 'polygon') {
                 if (!currentAnnotation) {
-                    currentAnnotation = { type: 'polygon', points: [{ x: e.offsetX, y: e.offsetY }], text: '' };
+                    currentAnnotation = { type: 'polygon', points: [{ x: e.offsetX, y: e.offsetY }], text: '', heightCm: '', widthCm: '' };
                 } else {
                     currentAnnotation.points.push({ x: e.offsetX, y: e.offsetY });
                 }
@@ -195,9 +201,13 @@
         function saveAnnotation() {
             if (currentAnnotation) {
                 currentAnnotation.text = annotationText.value;
+                currentAnnotation.heightCm = annotationHeight.value;
+                currentAnnotation.widthCm = annotationWidth.value;
                 annotations.push(currentAnnotation);
                 currentAnnotation = null;
                 annotationText.value = '';
+                annotationHeight.value = '';
+                annotationWidth.value = '';
                 redraw();
             }
         }
@@ -226,6 +236,8 @@
             annotations = [];
             currentAnnotation = null;
             annotationText.value = '';
+            annotationHeight.value = '';
+            annotationWidth.value = '';
             document.getElementById('patientAge').value = '';
             document.getElementById('patientGender').value = '';
             document.getElementById('patientSymptoms').value = '';
@@ -233,50 +245,49 @@
         }
 
         function submitAnnotations() {
+            let form = document.getElementById('uploadForm');
+            let imageData = canvas.toDataURL('image/png');
+            let jsonData = JSON.stringify({ patientInfo, annotations });
 
-        let form = document.getElementById('uploadForm');
-        let imageData = canvas.toDataURL('image/png');
-        let jsonData = JSON.stringify({ patientInfo, annotations });
+            // Convert base64 to file object
+            fetch(imageData)
+                .then(res => res.blob())
+                .then(blob => {
+                    let file = new File([blob], patientInfo.fileName, { type: 'image/png' });
+                    let fileInput = document.getElementById('imageFile');
+                    let jsonInput = document.getElementById('jsonFile');
+                    let jsonFileName = patientInfo.fileName.replace(/\.[^/.]+$/, "") + '.json';
 
-        // Convert base64 to file object
-        fetch(imageData)
-            .then(res => res.blob())
-            .then(blob => {
-                let file = new File([blob], patientInfo.fileName, { type: 'image/png' });
-                let fileInput = document.getElementById('imageFile');
-                let jsonInput = document.getElementById('jsonFile');
-                let jsonFileName = patientInfo.fileName.replace(/\.[^/.]+$/, "") + '.json';
+                    fileInput.files = createFileList(file);
+                    jsonInput.value = jsonData;
 
-                fileInput.files = createFileList(file);
-                jsonInput.value = jsonData;
+                    form.submit();
+                });
 
-                form.submit();
+            // Redirect to the index page after submission
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                let formData = new FormData(form);
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.href = '/'; // Redirect to index page
+                    } else {
+                        console.error('Form submission failed.');
+                    }
+                }).catch(error => {
+                    console.error('Error:', error);
+                });
             });
+        }
 
-        // Redirect to the index page after submission
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
-            let formData = new FormData(form);
-            fetch(form.action, {
-                method: 'POST',
-                body: formData
-            }).then(response => {
-                if (response.ok) {
-                    window.location.href = '/'; // Redirect to index page
-                } else {
-                    console.error('Form submission failed.');
-                }
-            }).catch(error => {
-                console.error('Error:', error);
-            });
-        });
-    }
-
-    function createFileList(file) {
-        let dataTransfer = new DataTransfer();
-        dataTransfer.items.add(file);
-        return dataTransfer.files;
-    }
+        function createFileList(file) {
+            let dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            return dataTransfer.files;
+        }
     </script>
 </body>
 </html>
