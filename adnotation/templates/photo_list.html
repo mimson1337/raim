@@ -28,6 +28,19 @@
         max-width: 100%;
         height: auto;
     }
+    .edit-button {
+        margin-top: 10px;
+        padding: 10px 20px;
+        font-size: 16px;
+        background-color: #007bff;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+    .edit-button:hover {
+        background-color: #0056b3;
+    }
 </style>
 
 <div class="container">
@@ -41,6 +54,9 @@
             <p><strong>Symptoms:</strong> {{ info.symptoms }}</p>
             <p><strong>File Name:</strong> {{ info.fileName }}</p>
             {% endwith %}
+            <a href="{% url 'edit_annotations' image.id %}">
+                <button class="edit-button">Edytuj adnotacje</button>
+            </a>
         </div>
     </div>
     {% endfor %}

@@ -1,0 +1,256 @@
+{% extends 'page.html' %}
+
+{% block title %}Edit Annotations{% endblock %}
+
+{% block content %}
+<style>
+    body {
+        font-family: Arial, sans-serif;
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        padding: 0;
+    }
+    h1 {
+        margin-top: 20px;
+    }
+    #controls {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 10px;
+        margin: 20px 0;
+    }
+    #controls button, #controls input[type="file"], #controls input[type="text"], #controls input[type="number"], #controls select {
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+    }
+    #controls input[type="file"] {
+        padding: 5px;
+    }
+    #canvas {
+        border: 0px solid #ccc;
+        margin-top: 20px;
+    }
+</style>
+
+<body>
+    <center><h1>Edytuj Adnotacje</h1></center>
+    <div id="controls">
+        <input type="number" id="patientAge" placeholder="Enter patient age"/>
+        <select id="patientGender">
+            <option value="" disabled selected>Select gender</option>
+            <option value="Male">Male</option>
+            <option value="Female">Female</option>
+            <option value="Other">Other</option>
+        </select>
+        <input type="text" id="patientSymptoms" placeholder="Enter symptoms"/>
+        <button id="rectAnnotation">Rectangle Annotation</button>
+        <button id="polyAnnotation">Polygon Annotation</button>
+        <input type="text" id="annotationText" placeholder="Enter annotation text"/>
+        <input type="number" id="annotationHeight" placeholder="Enter lesion height (cm)" />
+        <input type="number" id="annotationWidth" placeholder="Enter lesion width (cm)" />
+        <button id="saveAnnotation">Save Annotation</button>
+        <button id="saveImage">Save Image with Annotations</button>
+        <button id="saveJson">Save Annotations as JSON</button>
+        <button id="resetAnnotations">Reset Annotations</button>
+        <button id="submitAnnotations">Submit</button>
+    </div>
+    <canvas id="canvas"></canvas>
+
+    <form id="uploadForm" action="{% url 'upload_annotations' %}" method="POST" enctype="multipart/form-data" style="display:none;">
+        {% csrf_token %}
+        <input type="file" name="imageFile" id="imageFile">
+        <input type="text" name="jsonFile" id="jsonFile">
+        <input type="submit" id="submitBtn">
+    </form>
+
+    <script>
+        let canvas = document.getElementById('canvas');
+        let ctx = canvas.getContext('2d');
+        let rectButton = document.getElementById('rectAnnotation');
+        let polyButton = document.getElementById('polyAnnotation');
+        let annotationText = document.getElementById('annotationText');
+        let annotationHeight = document.getElementById('annotationHeight');
+        let annotationWidth = document.getElementById('annotationWidth');
+        let saveAnnotationButton = document.getElementById('saveAnnotation');
+        let saveImageButton = document.getElementById('saveImage');
+        let saveJsonButton = document.getElementById('saveJson');
+        let resetAnnotationsButton = document.getElementById('resetAnnotations');
+        let submitButton = document.getElementById('submitAnnotations');
+        let annotations = JSON.parse('{{ annotations|escapejs }}');
+        let patientInfo = JSON.parse('{{ patient_info|escapejs }}');
+        let currentAnnotation = null;
+        let drawing = false;
+        let mode = 'rectangle';
+        let img = new Image();
+
+        img.src = '{{ image_url }}';
+        img.onload = function() {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx.drawImage(img, 0, 0);
+            redraw();
+        }
+
+        // Initialize patient info fields
+        document.getElementById('patientAge').value = patientInfo.age;
+        document.getElementById('patientGender').value = patientInfo.gender;
+        document.getElementById('patientSymptoms').value = patientInfo.symptoms;
+
+        rectButton.addEventListener('click', () => mode = 'rectangle');
+        polyButton.addEventListener('click', () => mode = 'polygon');
+        canvas.addEventListener('mousedown', startDrawing);
+        canvas.addEventListener('mousemove', draw);
+        canvas.addEventListener('mouseup', stopDrawing);
+        saveAnnotationButton.addEventListener('click', saveAnnotation);
+        saveImageButton.addEventListener('click', saveImage);
+        saveJsonButton.addEventListener('click', saveJson);
+        resetAnnotationsButton.addEventListener('click', resetAnnotations);
+        submitButton.addEventListener('click', submitAnnotations);
+
+        function startDrawing(e) {
+            if (mode === 'rectangle') {
+                currentAnnotation = { type: 'rectangle', x: e.offsetX, y: e.offsetY, width: 0, height: 0, text: '', heightCm: '', widthCm: '' };
+            } else if (mode === 'polygon') {
+                if (!currentAnnotation) {
+                    currentAnnotation = { type: 'polygon', points: [{ x: e.offsetX, y: e.offsetY }], text: '', heightCm: '', widthCm: '' };
+                } else {
+                    currentAnnotation.points.push({ x: e.offsetX, y: e.offsetY });
+                }
+            }
+            drawing = true;
+        }
+
+        function draw(e) {
+            if (!drawing) return;
+            if (mode === 'rectangle' && currentAnnotation) {
+                currentAnnotation.width = e.offsetX - currentAnnotation.x;
+                currentAnnotation.height = e.offsetY - currentAnnotation.y;
+            } else if (mode === 'polygon' && currentAnnotation) {
+                currentAnnotation.points[currentAnnotation.points.length - 1] = { x: e.offsetX, y: e.offsetY };
+            }
+            redraw();
+        }
+
+        function stopDrawing(e) {
+            drawing = false;
+            redraw();
+        }
+
+        canvas.addEventListener('dblclick', () => {
+            if (mode === 'polygon' && currentAnnotation) {
+                annotations.push(currentAnnotation);
+                currentAnnotation = null;
+                redraw();
+            }
+        });
+
+        function redraw() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.drawImage(img, 0, 0);
+            ctx.strokeStyle = 'red';
+            annotations.forEach(ann => {
+                if (ann.type === 'rectangle') {
+                    ctx.strokeRect(ann.x, ann.y, ann.width, ann.height);
+                } else if (ann.type === 'polygon') {
+                    ctx.beginPath();
+                    ctx.moveTo(ann.points[0].x, ann.points[0].y);
+                    for (let i = 1; i < ann.points.length; i++) {
+                        ctx.lineTo(ann.points[i].x, ann.points[i].y);
+                    }
+                    ctx.closePath();
+                    ctx.stroke();
+                }
+                if (ann.text) {
+                    ctx.font = "bold 20px Arial";
+                    ctx.fillText(ann.text, ann.x || ann.points[0].x, ann.y || ann.points[0].y);
+                }
+            });
+
+            if (currentAnnotation && currentAnnotation.type === 'rectangle') {
+                ctx.strokeRect(currentAnnotation.x, currentAnnotation.y, currentAnnotation.width, currentAnnotation.height);
+            } else if (currentAnnotation && currentAnnotation.type === 'polygon') {
+                ctx.beginPath();
+                ctx.moveTo(currentAnnotation.points[0].x, currentAnnotation.points[0].y);
+                for (let i = 1; i < currentAnnotation.points.length; i++) {
+                    ctx.lineTo(currentAnnotation.points[i].x, currentAnnotation.points[i].y);
+                }
+                ctx.stroke();
+                currentAnnotation.points.forEach(point => {
+                    ctx.beginPath();
+                    ctx.arc(point.x, point.y, 3, 0, 2 * Math.PI);
+                    ctx.fill();
+                });
+            }
+        }
+
+        function saveAnnotation() {
+            if (currentAnnotation) {
+                currentAnnotation.text = annotationText.value;
+                currentAnnotation.heightCm = annotationHeight.value;
+                currentAnnotation.widthCm = annotationWidth.value;
+                annotations.push(currentAnnotation);
+                currentAnnotation = null;
+                annotationText.value = '';
+                annotationHeight.value = '';
+                annotationWidth.value = '';
+                redraw();
+            }
+        }
+
+        function saveImage() {
+            let link = document.createElement('a');
+            link.download = 'annotated_image.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        }
+
+        function saveJson() {
+            let data = JSON.stringify({ patientInfo: { age: patientInfo.age, gender: patientInfo.gender, symptoms: patientInfo.symptoms }, annotations: annotations });
+            let link = document.createElement('a');
+            link.download = 'annotations.json';
+            link.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(data);
+            link.click();
+        }
+
+        function resetAnnotations() {
+            annotations = [];
+            currentAnnotation = null;
+            annotationText.value = '';
+            annotationHeight.value = '';
+            annotationWidth.value = '';
+            redraw();
+        }
+
+        function submitAnnotations() {
+            let imageFile = document.getElementById('imageFile');
+            let jsonFile = document.getElementById('jsonFile');
+            let submitBtn = document.getElementById('submitBtn');
+            let dataURL = canvas.toDataURL();
+            let blob = dataURLtoBlob(dataURL);
+            let file = new File([blob], 'annotated_image.png', { type: 'image/png' });
+            imageFile.files = createFileList(file);
+            jsonFile.value = JSON.stringify({ patientInfo: { age: document.getElementById('patientAge').value, gender: document.getElementById('patientGender').value, symptoms: document.getElementById('patientSymptoms').value }, annotations: annotations });
+            submitBtn.click();
+        }
+
+        function dataURLtoBlob(dataurl) {
+            let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+                bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+            while (n--) {
+                u8arr[n] = bstr.charCodeAt(n);
+            }
+            return new Blob([u8arr], { type: mime });
+        }
+
+        function createFileList(file) {
+            let dataTransfer = new DataTransfer();
+            dataTransfer.items.add(file);
+            return dataTransfer.files;
+        }
+    </script>
+</body>
+{% endblock %}

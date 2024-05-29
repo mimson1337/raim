@@ -28,6 +28,8 @@ urlpatterns = [
     path('photo-list/', views.photo_list, name='photo_list'),
     path('save_annotation/', save_annotation, name='save_annotation'),
     path('upload_annotations/', views.upload_annotations, name='upload_annotations'),
+    path('edit_annotations/<int:image_id>/', views.edit_annotations, name='edit_annotations'),
+    path('upload_annotations/', views.upload_annotations, name='upload_annotations'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
 
 
