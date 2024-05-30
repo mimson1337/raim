@@ -61,21 +61,30 @@ def save_annotation(request):
 @csrf_exempt
 def upload_annotations(request):
     if request.method == 'POST':
-        image_file = request.FILES['imageFile']
-        json_data = json.loads(request.POST['jsonFile'])
+        image_id = request.POST.get('image_id')
+        image_file = request.FILES.get('imageFile')
+        json_data = json.loads(request.POST.get('jsonFile'))
 
-        annotated_image = AnnotatedImage(
-            image=image_file,
-            json_data=json_data
-        )
-        annotated_image.save()
+        if image_id:
+            # Aktualizujemy istniejący obraz
+            annotated_image = get_object_or_404(AnnotatedImage, id=image_id)
+            if image_file:
+                annotated_image.image = image_file
+            annotated_image.json_data = json_data
+            annotated_image.save()
+        else:
+            # Tworzymy nowy obraz
+            annotated_image = AnnotatedImage(image=image_file, json_data=json_data)
+            annotated_image.save()
 
-        return redirect('index')  # Redirect to the index page
-    return HttpResponse('Invalid request method.')
+        return redirect('photo_list')
+
+    return render(request, 'upload_annotations.html')
 
 def edit_annotations(request, image_id):
     annotated_image = get_object_or_404(AnnotatedImage, id=image_id)
     context = {
+        'annotated_image': annotated_image,
         'image_url': annotated_image.image.url,
         'annotations': json.dumps(annotated_image.json_data['annotations']),
         'patient_info': json.dumps(annotated_image.json_data['patientInfo'])

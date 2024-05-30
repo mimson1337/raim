@@ -50,7 +50,18 @@
         <input type="file" id="imageLoader" name="imageLoader"/>
         <button id="rectAnnotation">Rectangle Annotation</button>
         <button id="polyAnnotation">Polygon Annotation</button>
-        <input type="text" id="annotationText" placeholder="Enter annotation text"/>
+        <!-- Zmieniamy pole tekstowe na listę wyboru -->
+        <select id="annotationText">
+            <option value="" disabled selected>Select skin lesion type</option>
+            <option value="Basal cell carcinoma">Basal cell carcinoma</option>
+            <option value="Squamous cell carcinoma">Squamous cell carcinoma</option>
+            <option value="Melanoma">Melanoma</option>
+            <option value="Actinic keratosis">Actinic keratosis</option>
+            <option value="Seborrheic keratosis">Seborrheic keratosis</option>
+            <option value="Dermatofibroma">Dermatofibroma</option>
+            <option value="Vascular lesion">Vascular lesion</option>
+            <option value="Benign nevus">Benign nevus</option>
+        </select>
         <input type="number" id="annotationHeight" placeholder="Enter lesion height (cm)" />
         <input type="number" id="annotationWidth" placeholder="Enter lesion width (cm)" />
         <button id="saveAnnotation">Save Annotation</button>
@@ -199,7 +210,7 @@
 
         function saveAnnotation() {
             if (currentAnnotation) {
-                currentAnnotation.text = annotationText.value;
+                currentAnnotation.text = annotationText.value;  // Pobierz wybraną wartość z listy wyboru
                 currentAnnotation.heightCm = annotationHeight.value;
                 currentAnnotation.widthCm = annotationWidth.value;
                 annotations.push(currentAnnotation);
@@ -207,9 +218,10 @@
                 annotationText.value = '';
                 annotationHeight.value = '';
                 annotationWidth.value = '';
-                redraw();
-            }
+            redraw();
         }
+    }
+
 
         function saveImage() {
             let link = document.createElement('a');
