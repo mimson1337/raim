@@ -37,7 +37,7 @@
 </style>
 
 <body>
-    <center><h1>Edytuj Adnotacje</h1></center>
+    <center><h1>Edit Annotation</h1></center>
     <div id="controls">
         <input type="number" id="patientAge" placeholder="Enter patient age"/>
         <select id="patientGender">
@@ -49,7 +49,19 @@
         <input type="text" id="patientSymptoms" placeholder="Enter symptoms"/>
         <button id="rectAnnotation">Rectangle Annotation</button>
         <button id="polyAnnotation">Polygon Annotation</button>
-        <input type="text" id="annotationText" placeholder="Enter annotation text"/>
+        <select id="annotationText">
+            <option value="" disabled selected>Select skin lesion type</option>
+            <option value="Basal cell carcinoma">Basal cell carcinoma</option>
+            <option value="Squamous cell carcinoma">Squamous cell carcinoma</option>
+            <option value="Melanoma">Melanoma</option>
+            <option value="Actinic keratosis">Actinic keratosis</option>
+            <option value="Seborrheic keratosis">Seborrheic keratosis</option>
+            <option value="Dermatofibroma">Dermatofibroma</option>
+            <option value="Vascular lesion">Vascular lesion</option>
+            <option value="Benign nevus">Benign nevus</option>
+            <option value="Other">Other</option>
+        </select>
+        <input type="text" id="annotationOtherText" placeholder="Specify other lesion type" style="display: none;"/>
         <input type="number" id="annotationHeight" placeholder="Enter lesion height (cm)" />
         <input type="number" id="annotationWidth" placeholder="Enter lesion width (cm)" />
         <button id="saveAnnotation">Save Annotation</button>
@@ -78,6 +90,7 @@
         let annotationHeight = document.getElementById('annotationHeight');
         let annotationWidth = document.getElementById('annotationWidth');
         let saveAnnotationButton = document.getElementById('saveAnnotation');
+        let annotationOtherText = document.getElementById('annotationOtherText');
         let saveImageButton = document.getElementById('saveImage');
         let saveJsonButton = document.getElementById('saveJson');
         let resetAnnotationsButton = document.getElementById('resetAnnotations');
@@ -88,6 +101,15 @@
         let drawing = false;
         let mode = 'rectangle';
         let img = new Image();
+
+        annotationText.addEventListener('change', function() {
+            if (annotationText.value === 'Other') {
+                annotationOtherText.style.display = 'block';
+            } else {
+                annotationOtherText.style.display = 'none';
+                annotationOtherText.value = ''; // Clear the text box
+            }
+        });
 
         img.src = '{{ image_url }}';
         img.onload = function() {
@@ -191,7 +213,11 @@
 
         function saveAnnotation() {
             if (currentAnnotation) {
-                currentAnnotation.text = annotationText.value;
+                if (annotationText.value === 'Other') {
+                    currentAnnotation.text = annotationOtherText.value;  // Pobierz wartość z pola tekstowego
+                } else {
+                    currentAnnotation.text = annotationText.value;  // Pobierz wybraną wartość z listy wyboru
+                }
                 currentAnnotation.heightCm = annotationHeight.value;
                 currentAnnotation.widthCm = annotationWidth.value;
                 annotations.push(currentAnnotation);
@@ -199,6 +225,8 @@
                 annotationText.value = '';
                 annotationHeight.value = '';
                 annotationWidth.value = '';
+                annotationOtherText.value = ''; // Wyczyszczenie pola tekstowego
+                annotationOtherText.style.display = 'none'; // Ukrycie pola tekstowego
                 redraw();
             }
         }
@@ -217,18 +245,16 @@
             link.download = patientInfo.fileName.replace(/\.[^/.]+$/, "") + '.json';
             link.href = 'data:text/json;charset=utf-8,' + encodeURIComponent(data);
             link.click();
-    }
+        }
+
         function updatePatientInfo() {
             patientInfo.age = document.getElementById('patientAge').value;
             patientInfo.gender = document.getElementById('patientGender').value;
             patientInfo.symptoms = document.getElementById('patientSymptoms').value;
-            // Upewniamy się, że nazwa pliku jest również przechowywana
             if (!patientInfo.fileName) {
                 patientInfo.fileName = img.src.split('/').pop();
             }
         }
-
-
 
         function resetAnnotations() {
             annotations = [];
@@ -236,48 +262,51 @@
             annotationText.value = '';
             annotationHeight.value = '';
             annotationWidth.value = '';
+            annotationOtherText.value = ''; // Wyczyszczenie pola tekstowego
+            annotationOtherText.style.display = 'none'; // Ukrycie pola tekstowego
+            document.getElementById('patientAge').value = '';
+            document.getElementById('patientGender').value = '';
+            document.getElementById('patientSymptoms').value = '';
             redraw();
         }
 
-         function submitAnnotations() {
-        updatePatientInfo();  // Ensure patient info is updated before submitting
-        let form = document.getElementById('uploadForm');
-        let imageData = canvas.toDataURL('image/png');
-        let jsonData = JSON.stringify({ patientInfo, annotations });
+        function submitAnnotations() {
+            updatePatientInfo();
+            let form = document.getElementById('uploadForm');
+            let imageData = canvas.toDataURL('image/png');
+            let jsonData = JSON.stringify({ patientInfo, annotations });
 
-        // Convert base64 to file object
-        fetch(imageData)
-            .then(res => res.blob())
-            .then(blob => {
-                let file = new File([blob], patientInfo.fileName, { type: 'image/png' });
-                let fileInput = document.getElementById('imageFile');
-                let jsonInput = document.getElementById('jsonFile');
-                let jsonFileName = patientInfo.fileName.replace(/\.[^/.]+$/, "") + '.json';
+            fetch(imageData)
+                .then(res => res.blob())
+                .then(blob => {
+                    let file = new File([blob], patientInfo.fileName, { type: 'image/png' });
+                    let fileInput = document.getElementById('imageFile');
+                    let jsonInput = document.getElementById('jsonFile');
+                    let jsonFileName = patientInfo.fileName.replace(/\.[^/.]+$/, "") + '.json';
 
-                fileInput.files = createFileList(file);
-                jsonInput.value = jsonData;
+                    fileInput.files = createFileList(file);
+                    jsonInput.value = jsonData;
 
-                form.submit();
+                    form.submit();
+                });
+
+            form.addEventListener('submit', function(event) {
+                event.preventDefault();
+                let formData = new FormData(form);
+                fetch(form.action, {
+                    method: 'POST',
+                    body: formData
+                }).then(response => {
+                    if (response.ok) {
+                        window.location.href = '/';
+                    } else {
+                        console.error('Form submission failed.');
+                    }
+                }).catch(error => {
+                    console.error('Error:', error);
+                });
             });
-
-        // Redirect to the index page after submission
-        form.addEventListener('submit', function(event) {
-            event.preventDefault();
-            let formData = new FormData(form);
-            fetch(form.action, {
-                method: 'POST',
-                body: formData
-            }).then(response => {
-                if (response.ok) {
-                    window.location.href = '/'; // Redirect to index page
-                } else {
-                    console.error('Form submission failed.');
-                }
-            }).catch(error => {
-                console.error('Error:', error);
-            });
-        });
-    }
+        }
 
         function dataURLtoBlob(dataurl) {
             let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],

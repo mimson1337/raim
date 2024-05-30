@@ -1,19 +1,20 @@
+<!--Główna strona html na której opierają się inne podstrony-->
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>System internetowy do adnotacji danych ilustrujących zmiany skórne</title>
+    <title>Web-based System for Annotating Skin Lesion Data</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 0;
             padding: 0;
-            background-color: #333; /* ciemnoszare tło */
-            color: #fff; /* kolor tekstu */
+            background-color: #333; /* dark gray background */
+            color: #fff; /* text color */
         }
         header {
-            background-color: #222; /* ciemniejszy odcień szarego dla nagłówka */
+            background-color: #222; /* darker shade of gray for the header */
             padding: 20px 0;
             text-align: center;
         }
@@ -29,25 +30,25 @@
             line-height: 1.7;
         }
         footer {
-            background-color: #222; /* ciemniejszy odcień szarego dla stopki */
+            background-color: #222;
             text-align: center;
             padding: 10px;
             position: fixed;
             bottom: 0;
             width: 100%;
-            color: #fff; /* kolor tekstu w stopce */
+            color: #fff;
         }
         nav {
-            background-color: #222; /* tło menu */
-            border-radius: 10px; /* zaokrąglenie rogów */
-            overflow: hidden; /* ukrycie elementów, które wyjdą poza kontener */
+            background-color: #222;
+            border-radius: 10px;
+            overflow: hidden;
         }
         nav ul {
             list-style-type: none;
             padding: 0;
             margin: 0;
             display: flex;
-            justify-content: space-around; /* równomierne rozłożenie opcji */
+            justify-content: space-around;
         }
         nav ul li {
             display: inline;
@@ -59,18 +60,17 @@
             display: block;
         }
         nav ul li a:hover {
-            background-color: #444; /* zmiana koloru tła po najechaniu myszką */
+            background-color: #444;
         }
     </style>
 </head>
 <body>
     <header>
-        <h1>System internetowy do adnotacji danych ilustrujących zmiany skórne</h1>
+        <h1>Web-based System for Annotating Skin Lesion Data</h1>
         <nav>
             <ul>
-<!--                <li><a href="">Strona główna</a></li>-->
-                <li><a href="{% url 'index' %}">Załaduj zdjęcie</a></li>
-                <li><a href="{% url 'photo_list' %}">Galeria</a></li>
+                <li><a href="{% url 'index' %}">Upload Image</a></li>
+                <li><a href="{% url 'photo_list' %}">Gallery</a></li>
             </ul>
         </nav>
     </header>
@@ -78,7 +78,7 @@
     {% block content %}{% endblock %}
 </main>
     <footer>
-        &copy; 2024 System internetowy do adnotacji danych ilustrujących zmiany skórne
+        &copy; 2024 Web-based System for Annotating Skin Lesion Data
     </footer>
 </body>
 </html>

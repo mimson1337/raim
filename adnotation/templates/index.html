@@ -3,7 +3,9 @@
 {% block title %}index{% endblock %}
 
 {% block content %}
+
 <style>
+    /* Stylizacja */
     body {
         font-family: Arial, sans-serif;
         display: flex;
@@ -11,9 +13,11 @@
         margin: 0;
         padding: 0;
     }
+    /* Nagłówek */
     h1 {
         margin-top: 20px;
     }
+    /* Kontrolki */
     #controls {
         display: flex;
         flex-wrap: wrap;
@@ -30,6 +34,7 @@
     #controls input[type="file"] {
         padding: 5px;
     }
+    /* Obszar rysowania na płótnie */
     #canvas {
         border: 0px solid #ccc;
         margin-top: 20px;
@@ -37,8 +42,11 @@
 </style>
 
 <body>
-    <center><h1>Narzędzie do adnotacji zmian skórnych</h1></center>
+    <!-- Nagłówek strony -->
+    <center><h1>Tool for skin lesion annotation</h1></center>
+    <!-- Kontrolki dla użytkownika -->
     <div id="controls">
+        <!-- Wprowadzanie informacji o pacjencie -->
         <input type="number" id="patientAge" placeholder="Enter patient age"/>
         <select id="patientGender">
             <option value="" disabled selected>Select gender</option>
@@ -47,31 +55,31 @@
             <option value="Other">Other</option>
         </select>
         <input type="text" id="patientSymptoms" placeholder="Enter symptoms"/>
+        <!-- Wczytywanie obrazu -->
         <input type="file" id="imageLoader" name="imageLoader"/>
+        <!-- Przyciski do rysowania różnych rodzajów adnotacji -->
         <button id="rectAnnotation">Rectangle Annotation</button>
         <button id="polyAnnotation">Polygon Annotation</button>
-        <!-- Zmieniamy pole tekstowe na listę wyboru -->
+        <!-- Wybór typu zmiany skórnej -->
         <select id="annotationText">
             <option value="" disabled selected>Select skin lesion type</option>
-            <option value="Basal cell carcinoma">Basal cell carcinoma</option>
-            <option value="Squamous cell carcinoma">Squamous cell carcinoma</option>
-            <option value="Melanoma">Melanoma</option>
-            <option value="Actinic keratosis">Actinic keratosis</option>
-            <option value="Seborrheic keratosis">Seborrheic keratosis</option>
-            <option value="Dermatofibroma">Dermatofibroma</option>
-            <option value="Vascular lesion">Vascular lesion</option>
-            <option value="Benign nevus">Benign nevus</option>
         </select>
+        <!-- Dodatkowe pola dla specyfikacji adnotacji -->
+        <input type="text" id="annotationOtherText" placeholder="Specify other lesion type" style="display: none;"/>
         <input type="number" id="annotationHeight" placeholder="Enter lesion height (cm)" />
         <input type="number" id="annotationWidth" placeholder="Enter lesion width (cm)" />
+        <!-- Przyciski do zapisywania adnotacji i obrazów -->
         <button id="saveAnnotation">Save Annotation</button>
         <button id="saveImage">Save Image with Annotations</button>
         <button id="saveJson">Save Annotations as JSON</button>
+        <!-- Przyciski do resetowania i przesłania adnotacji -->
         <button id="resetAnnotations">Reset Annotations</button>
         <button id="submitAnnotations">Submit</button>
     </div>
+    <!-- Płótno do rysowania -->
     <canvas id="canvas"></canvas>
 
+    <!-- Formularz do przesłania obrazu z adnotacjami -->
     <form id="uploadForm" action="{% url 'upload_annotations' %}" method="POST" enctype="multipart/form-data" style="display:none;">
         {% csrf_token %}
         <input type="file" name="imageFile" id="imageFile">
@@ -79,13 +87,16 @@
         <input type="submit" id="submitBtn">
     </form>
 
+    <!-- Skrypt JavaScript -->
     <script>
+        // Inicjalizacja zmiennych i elementów interfejsu użytkownika
         let canvas = document.getElementById('canvas');
         let ctx = canvas.getContext('2d');
         let imageLoader = document.getElementById('imageLoader');
         let rectButton = document.getElementById('rectAnnotation');
         let polyButton = document.getElementById('polyAnnotation');
         let annotationText = document.getElementById('annotationText');
+        let annotationOtherText = document.getElementById('annotationOtherText');
         let annotationHeight = document.getElementById('annotationHeight');
         let annotationWidth = document.getElementById('annotationWidth');
         let saveAnnotationButton = document.getElementById('saveAnnotation');
@@ -106,18 +117,35 @@
             fileName: ''
         };
 
+        // Obsługa zdarzenia zmiany obrazu
         imageLoader.addEventListener('change', handleImage, false);
+        // Przełączanie między trybem adnotacji prostokątnej a wielokątnej
         rectButton.addEventListener('click', () => mode = 'rectangle');
         polyButton.addEventListener('click', () => mode = 'polygon');
+        // Rozpoczęcie rysowania adnotacji
         canvas.addEventListener('mousedown', startDrawing);
         canvas.addEventListener('mousemove', draw);
         canvas.addEventListener('mouseup', stopDrawing);
+        // Zapisywanie adnotacji
         saveAnnotationButton.addEventListener('click', saveAnnotation);
         saveImageButton.addEventListener('click', saveImage);
         saveJsonButton.addEventListener('click', saveJson);
+        // Resetowanie adnotacji
         resetAnnotationsButton.addEventListener('click', resetAnnotations);
+        // Przesyłanie adnotacji
         submitButton.addEventListener('click', submitAnnotations);
 
+        // Obsługa zmiany wyboru typu zmiany skórnej
+        annotationText.addEventListener('change', function() {
+            if (annotationText.value === 'Other') {
+                annotationOtherText.style.display = 'block';
+            } else {
+                annotationOtherText.style.display = 'none';
+                annotationOtherText.value = ''; // Clear the text box
+            }
+        });
+
+        // Funkcja obsługująca wczytywanie obrazu
         function handleImage(e) {
             let reader = new FileReader();
             reader.onload = function(event) {
@@ -132,6 +160,7 @@
             reader.readAsDataURL(e.target.files[0]);
         }
 
+        // Funkcja rozpoczynająca rysowanie adnotacji
         function startDrawing(e) {
             if (mode === 'rectangle') {
                 currentAnnotation = { type: 'rectangle', x: e.offsetX, y: e.offsetY, width: 0, height: 0, text: '', heightCm: '', widthCm: '' };
@@ -145,6 +174,7 @@
             drawing = true;
         }
 
+        // Funkcja rysująca adnotacje
         function draw(e) {
             if (!drawing) return;
             if (mode === 'rectangle' && currentAnnotation) {
@@ -156,11 +186,13 @@
             redraw();
         }
 
+        // Funkcja zatrzymująca rysowanie adnotacji
         function stopDrawing(e) {
             drawing = false;
             redraw();
         }
 
+        // Obsługa podwójnego kliknięcia (zakończenie rysowania wielokąta)
         canvas.addEventListener('dblclick', () => {
             if (mode === 'polygon' && currentAnnotation) {
                 annotations.push(currentAnnotation);
@@ -169,6 +201,7 @@
             }
         });
 
+        // Funkcja przerysowująca płótno z adnotacjami
         function redraw() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.drawImage(img, 0, 0);
@@ -208,9 +241,14 @@
             }
         }
 
+        // Funkcja zapisująca adnotację
         function saveAnnotation() {
             if (currentAnnotation) {
-                currentAnnotation.text = annotationText.value;  // Pobierz wybraną wartość z listy wyboru
+                if (annotationText.value === 'Other') {
+                    currentAnnotation.text = annotationOtherText.value;  // Pobierz wartość z pola tekstowego
+                } else {
+                    currentAnnotation.text = annotationText.value;  // Pobierz wybraną wartość z listy wyboru
+                }
                 currentAnnotation.heightCm = annotationHeight.value;
                 currentAnnotation.widthCm = annotationWidth.value;
                 annotations.push(currentAnnotation);
@@ -218,11 +256,13 @@
                 annotationText.value = '';
                 annotationHeight.value = '';
                 annotationWidth.value = '';
-            redraw();
+                annotationOtherText.value = ''; // Wyczyszczenie pola tekstowego
+                annotationOtherText.style.display = 'none'; // Ukrycie pola tekstowego
+                redraw();
+            }
         }
-    }
 
-
+        // Funkcja zapisująca obraz z adnotacjami
         function saveImage() {
             let link = document.createElement('a');
             link.download = 'annotated_image.png';
@@ -230,6 +270,7 @@
             link.click();
         }
 
+        // Funkcja zapisująca adnotacje jako plik JSON
         function saveJson() {
             updatePatientInfo();  // Ensure patient info is updated before saving JSON
             let json = JSON.stringify({ patientInfo, annotations }, null, 2);
@@ -241,31 +282,35 @@
             link.click();
         }
 
+        // Funkcja aktualizująca informacje o pacjencie
         function updatePatientInfo() {
             patientInfo.age = document.getElementById('patientAge').value;
             patientInfo.gender = document.getElementById('patientGender').value;
             patientInfo.symptoms = document.getElementById('patientSymptoms').value;
         }
 
+        // Funkcja resetująca adnotacje
         function resetAnnotations() {
             annotations = [];
             currentAnnotation = null;
             annotationText.value = '';
             annotationHeight.value = '';
             annotationWidth.value = '';
+            annotationOtherText.value = ''; // Wyczyszczenie pola tekstowego
+            annotationOtherText.style.display = 'none'; // Ukrycie pola tekstowego
             document.getElementById('patientAge').value = '';
             document.getElementById('patientGender').value = '';
             document.getElementById('patientSymptoms').value = '';
             redraw();
         }
 
+        // Funkcja przesyłająca adnotacje
         function submitAnnotations() {
             updatePatientInfo();  // Ensure patient info is updated before submitting
             let form = document.getElementById('uploadForm');
             let imageData = canvas.toDataURL('image/png');
             let jsonData = JSON.stringify({ patientInfo, annotations });
 
-            // Convert base64 to file object
             fetch(imageData)
                 .then(res => res.blob())
                 .then(blob => {
@@ -280,7 +325,6 @@
                     form.submit();
                 });
 
-            // Redirect to the index page after submission
             form.addEventListener('submit', function(event) {
                 event.preventDefault();
                 let formData = new FormData(form);
@@ -299,6 +343,7 @@
             });
         }
 
+        // Funkcja tworząca listę plików
         function createFileList(file) {
             let dataTransfer = new DataTransfer();
             dataTransfer.items.add(file);

@@ -55,7 +55,7 @@
             <p><strong>File Name:</strong> {{ info.fileName }}</p>
             {% endwith %}
             <a href="{% url 'edit_annotations' image.id %}">
-                <button class="edit-button">Edytuj adnotacje</button>
+                <button class="edit-button">Edit annotation</button>
             </a>
         </div>
     </div>
@@ -63,6 +63,6 @@
 </div>
 
 <footer>
-    &copy; 2024 System internetowy do adnotacji danych ilustrujących zmiany skórne
+    &copy; 2024 Web-based System for Annotating Skin Lesion Data
 </footer>
 {% endblock %}
