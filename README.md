@@ -1,14 +1,14 @@
-# System internetowy do adnotacji danych ilustrujących zmiany skórne
+# Web-Based System for Annotating Skin Changes Data
 
-## Opis
+## Description
 
-Zaawansowany system internetowy umożliwiający skuteczną adnotację oraz analizę danych dotyczących zmian skórnych. System służy jako narzędzie wspierające diagnostykę dermatologiczną, umożliwiając lekarzom oraz pacjentom zarządzanie i monitorowanie zmian w skórze w sposób efektywny i bezpieczny.
+An advanced web-based system enabling effective annotation and analysis of data related to skin changes. The system serves as a tool to support dermatological diagnostics, allowing doctors and patients to manage and monitor skin changes efficiently and safely.
 
-## Jak Uruchomić
+## How to Run
 
-Aby uruchomić projekt, należy wejść na stronę https://suti47.pythonanywhere.com/ , lub, alternatywnie, ściągnąć najnowszą z wersji programu z platformy github
+To run the project, visit https://suti47.pythonanywhere.com/, or alternatively, download the latest version of the program from the GitHub platform.
 
-## Autorzy
+## Authors
 
 Miłosz Bakiera s188745
 Wiktor Kowalczyk s188895
